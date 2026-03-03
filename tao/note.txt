@@ -1,0 +1,45 @@
+Note utiles
+
+- Projection de rayon: Soit une camera de coordonnes O, un vecteur de direction u,
+		une hauteur (en nombre de pixel) H, une largeur (en nombre de pixel) W et un angle de vue fov en radians
+		
+			le calcul pour la direction de chaque rayon est :
+			
+			Soit x et y le pixel actuel
+				vec3 x = { O.x + x - W / 2 ; 0.y + y - H / 2 ; -W / (2 * tan(fov/2)) }
+
+- Norme d'un vecteur: Soit le vecteur a de dimesions 3
+				Sa norme vaudra: √(a.x² + a.y² + a.z²)
+
+		Par extension la norme a carre d'un vecteur est: a.x² + a.y² + a.z²
+	
+- Le produit scalaire de deux vecteur peut se resumer a:
+			Soit a et b due x vecteur 3
+			a⋅b = a.x*b.x + a.y*b.y + a.z*b.z
+
+- La multiplication d'un vecteur par un scalaire quivaut a la multiplication de chaque membre du vecteur par le scalaire
+			Soit a un vecteur 3 et x un reel
+			xa = { a.x*x ; a.y*x ; a.z*x }
+
+- La normalization d'un vecteur correspond a la division de chaque membre du vecteur par sa norme
+			Soit a un vecteur 3 et ||a|| sa norme (||a|| = √(a.x² + a.y² + a.z²)) 
+			normalized = { a.x / ||a|| ; a.y / ||a|| ; a.z / ||a|| }
+
+
+- Sphere: un centre et un rayon
+
+- L'intersection d'un vecteur et une sphere:
+			Peut se resumer a la resolution d'un polynome de degre 2 (soit P = C + tu droite representant le rayon et R² = ||P-O||² l'equation implicite de la sphere ou O est le centre P un vecteur et R le rayon)
+			si on veux un point qui satisfasse les deux equation:
+				||P - O||² = R² avec P = C + tu
+				
+				=> ||C + tu - O||² = R²    -- avec l'IR  ||a + b||² = ||a||² + 2*a⋅b + ||b||²
+				=> ||tu||² + 2*(tu)⋅(C-O) + ||C - O||² 		-- Sachant que la norme d'un vecteur unitaire (u) est 1 alors  
+				=> t² + 2t*u⋅(C-O) + ||C-O||² - R² = 0;
+
+				Donc avec le principe de resolution de polynome du second degre tout depend du discriminant
+				Δ = b² - 4*a*c
+				Δ = (2t*u⋅(C-O))² - 4*(||C-O||² - R²)
+				si - le Δ < 0 alors aucune intersection
+				   - le Δ == 0 alors le rayon est tangente au cercle
+				   - le Δ > 0 alors le rayon traverse la sphere

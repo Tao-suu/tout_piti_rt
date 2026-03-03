@@ -6,11 +6,14 @@
 #    By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/27 17:19:19 by tbez--du          #+#    #+#              #
-#    Updated: 2026/03/02 18:37:36 by tbez--du         ###   ########.fr        #
+#    Updated: 2026/03/03 13:52:53 by tbez--du         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-SRC		=	main.c
+SRC		=	main.c \
+			mlx_hook.c \
+			mlx_base.c \
+			vec_utils.c 
 OBJ		=	$(SRC:.c=.o)
 
 SRC_DIR	=	src/
@@ -19,7 +22,7 @@ OBJ_DIR	=	obj/
 CC		=	clang
 CFLAGS	=	-Wall -Werror -Wextra
 CLINKS	=	-Lmlx/ -lmlx -lmlx_Linux -lX11 -lXext -lm
-CINC	=	-Imlx/
+CINC	=	-Imlx/ -Iincludes/
 
 CF		=	$(CC) $(CFLAGS) $(CINC)
 

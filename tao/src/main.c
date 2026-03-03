@@ -6,170 +6,123 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/27 17:18:19 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/02 18:52:04 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/03 19:01:54 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <mlx.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
+#include "header.h"
 
-typedef struct {
-	void	*mlx;
-	void	*img;
-	void	*win;
-	int		bpp;
-	int		end;
-	int		line_len;
-	char	*addr;
-}	t_mlx;
-
-typedef struct {
-	t_mlx	mlx;
-}	t_data;
-
-typedef struct {
-	float	x;
-	float	y;
-	float	z;
-}	t_vec3;
-
-typedef struct {
-	float	radius;
-	t_vec3	center;
-	t_vec3	color;
-}	t_sphere;
-
-int	init_mlx(t_data *data)
+int		inter_s(t_sphere s, t_ray ray, t_vec3 *P, t_vec3 *N, double *t)
 {
-	data->mlx.mlx = mlx_init();
-	if (!data->mlx.mlx)
-		return (0);
-	data->mlx.win = mlx_new_window(data->mlx.mlx, 800, 800, "poc_tao");
-	if (!data->mlx.win)
-	{
-		mlx_destroy_display(data->mlx.mlx);
-		return (0);
-	}
-	return (1);
-}
-
-int	get_mlx_image(t_data *data)
-{
-	data->mlx.img = mlx_new_image(data->mlx.mlx, 800, 800);
-	if (!data->mlx.img)
-		return (0);
-	data->mlx.addr = mlx_get_data_addr(data->mlx.img, &data->mlx.bpp,
-			&data->mlx.line_len, &data->mlx.end);
-	if (!data->mlx.addr)
-		return (0);
-	return (1);
-}
-
-void	destroy_mlx(t_data *data)
-{
-	if (data->mlx.img)
-		mlx_destroy_image(data->mlx.mlx, data->mlx.img);
-	if (data->mlx.win)
-		mlx_destroy_window(data->mlx.mlx, data->mlx.win);
-	mlx_destroy_display(data->mlx.mlx);
-	free(data->mlx.mlx);
-}
-
-int	quit_hook(t_data *data)
-{
-	mlx_loop_end(data->mlx.mlx);
-	return (1);
-}
-
-int	loop_hook(t_data *data)
-{
-	(void)data;
-	return (1);
-}
- 
-int	key_hook(int key, t_data *data)
-{
-	if (key == 0xff1b)
-		quit_hook(data);
-	return (0);
-}
-
-void	set_hook(t_data *data)
-{
-	mlx_hook(data->mlx.win, 17, 0, quit_hook, data);
-	mlx_loop_hook(data->mlx.mlx, loop_hook, data);
-	mlx_key_hook(data->mlx.win, key_hook, data);
-}
-
-double	dot(t_vec3 a, t_vec3 b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-double	get_norm2(t_vec3 a)
-{
-	return (a.x*a.x + a.y*a.y + a.z*a.z);
-}
-
-t_vec3	vec3_prod(double factor, t_vec3 a)
-{
-	t_vec3	tmp;
-
-	tmp = (t_vec3){a.x*factor, a.y*factor, a.z*factor};
-	return (tmp);
-}
-
-int		inter_s(t_sphere s, t_vec3 ray)
-{
-	//	P = C + t*u
-	//	S: || P - O ||**2 = R **2
 	double	a = 1;
-	double	b = 2 * dot(ray, vec3_prod(-1, s.center));
-	double	c = get_norm2(s.center) - s.radius * s.radius;
+	double	b = 2 * vec_dot(ray.dir, vec_sub(ray.origin, s.center));
+	double	c = vec_norm2(vec_sub(ray.origin, s.center)) - s.radius * s.radius;
 
 	double delta = b * b - 4 * a * c;
 	if (delta < 0)
 		return (0);
-//	double t1 = (-b - sqrt(delta)) / (2.0 * a);
+	double t1 = (-b - sqrt(delta)) / (2.0 * a);
 	double t2 = (-b + sqrt(delta)) / (2.0 * a);
-	if (t2 > 0)
-		return (1);
-	return (0);
+	if (t2 < 0)
+		return (0);
+	if (t1 > 0)
+		*t = t1;
+	else
+		*t = t2;
+	*P = vec_add(ray.origin, vec_prod(*t, ray.dir));
+	*N = vec_normalize(vec_sub(*P, s.center));
+	return (1);
 }
 
-t_vec3	normalize(t_vec3 a)
+int		inter_ss(t_sphere *s, int n, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id)
 {
-	double	norme = sqrt(get_norm2(a));
-	t_vec3 tmp = (t_vec3){a.x / norme, a.y / norme, a.z / norme};
-	return tmp;
+	int	has_inter = 0;
+	double min_t = 1E99;
 
+	for (int i = 0; i < n; i++)
+	{
+		t_vec3	lP, lN;
+		double	t;
+		int lhas_inter = inter_s(s[i], ray, &lP, &lN, &t);
+		if (lhas_inter)
+		{
+			has_inter = 1;
+			if (t < min_t) 
+			{
+				*s_id = i;
+				min_t = t;
+				*P = lP;
+				*N = lN;
+			}
+		}
+	}
+	return (has_inter);
 }
+
+
 
 void	compute(t_data *data)
 {
-	t_sphere	s;
+	t_sphere	s[6];
 
-	s.center = (t_vec3){0.0, 0.0, -55.0};
-	s.radius = 20.0;
-	s.color = (t_vec3){255.0, 0.0, 0.0};
+	s[0].center = (t_vec3){0.0, 0.0, -55.0};
+	s[0].radius = 20.0;
+	s[0].albedo = (t_vec3){1.0, 0.0, 0.0};
 
-	double	fov = 90.0 * M_PI / 180.0;
+	s[1].center = (t_vec3){0.0, -2000.0 - 20.0, 0.0};
+	s[1].radius = 2000.0;
+	s[1].albedo = (t_vec3){1.0, 1.0, 1.0};
 
-//	t_vec3	r_origin = (t_vec3){0.0, 0.0, 0.0};
+	s[2].center = (t_vec3){0.0, 2000.0 + 100.0, 0.0};
+	s[2].radius = 2000.0;
+	s[2].albedo = (t_vec3){1.0, 1.0, 1.0};
+
+	s[3].center = (t_vec3){-2000-50, 0.0, 0.0};
+	s[3].radius = 2000.0;
+	s[3].albedo = (t_vec3){0.0, 1.0, 0.0};
+
+	s[4].center = (t_vec3){2000+50, 0.0 , 0.0};
+	s[4].radius = 2000.0;
+	s[4].albedo = (t_vec3){0.0, 0.0, 1.0};
+
+	s[5].center = (t_vec3){0.0, 0.0 , -2000-100};
+	s[5].radius = 2000.0;
+	s[5].albedo = (t_vec3){0.0, 1.0, 1.0};
+
+	t_vec3	l_pos = (t_vec3){15.0, 70.0, 15};
+	double	l_I = 1000000;
+
+	double	fov = 60.0 * M_PI / 180.0;
+
+	t_vec3	c_origin = (t_vec3){0.0, 0.0, 0.0};
+//	t_vec3	c_dir = (t_vec3){0.0, 0.0, -1.0};
 
 	for (int x = 0; x < 800; x++)
 	{
 		for (int y = 0; y < 800; y++)
 		{
-			t_vec3	r_dir = (t_vec3){x - 800 / 2.0, y - 800 / 2.0, -800 / (2 * tan(fov / 2.0))};
-			r_dir = normalize(r_dir);
-			//printf("%d %d: r_dir = {%f;%f;%f}\n", x, y, r_dir.x, r_dir.y, r_dir.z);
-			if (inter_s(s, r_dir))
-				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, y, 0x00ff0000);
+			t_ray	ray;
+			ray.dir = (t_vec3){x - 800 / 2.0, y - 800 / 2.0, -800 / (2 * tan(fov / 2.0))};
+			ray.dir = vec_normalize(ray.dir);
+			ray.origin = c_origin;
+
+			t_vec3	N, P;
+			double	p_I = 0;
+			int		s_id;
+
+			int		has_inter = inter_ss(s, 6, ray, &P, &N, &s_id);
+			if (has_inter)
+			{
+				p_I = l_I * fmax(0, vec_dot(vec_normalize(vec_sub(l_pos, P)), N)) / vec_norm2(vec_sub(l_pos, P));		
+
+				t_vec3	color = (t_vec3){fmin(255, fmax(0, p_I)), fmin(255, fmax(0, p_I)), fmin(255, fmax(0, p_I))};
+				color = vec_prodv(color, s[s_id].albedo);
+
+				int	c = 00 << 24 | (unsigned char)color.x << 16 | (unsigned char)color.y << 8 | (unsigned char)color.z;
+				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, 800 - y, c);
+			}
 			else
-				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, y, 0x00000000);
+				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, 800 - y, 0x00000000);
 		}
 	}
 
@@ -193,8 +146,8 @@ int	main(void)
 	set_hook(&data);
 
 	compute(&data);
+	printf("?\n");
 	mlx_loop(data.mlx.mlx);
 
-	printf("?\n");
 	destroy_mlx(&data);
 }
