@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/27 17:18:19 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/03 19:01:54 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/06 16:57:10 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,10 +34,10 @@ int		inter_s(t_sphere s, t_ray ray, t_vec3 *P, t_vec3 *N, double *t)
 	return (1);
 }
 
-int		inter_ss(t_sphere *s, int n, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id)
+int		inter_ss(t_sphere *s, int n, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id, double *min_t)
 {
 	int	has_inter = 0;
-	double min_t = 1E99;
+	*min_t = 1E99;
 
 	for (int i = 0; i < n; i++)
 	{
@@ -47,10 +47,10 @@ int		inter_ss(t_sphere *s, int n, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id)
 		if (lhas_inter)
 		{
 			has_inter = 1;
-			if (t < min_t) 
+			if (t < *min_t) 
 			{
 				*s_id = i;
-				min_t = t;
+				*min_t = t;
 				*P = lP;
 				*N = lN;
 			}
@@ -59,70 +59,167 @@ int		inter_ss(t_sphere *s, int n, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id)
 	return (has_inter);
 }
 
+int		has_inter_s(t_sphere s, t_ray ray, double *t)
+{
+	t_poly poly;
+
+	poly.a = 1;
+	poly.b = 2 * vec_dot(ray.dir, vec_sub(ray.origin, s.center));
+	poly.c = vec_norm2(vec_sub(ray.origin, s.center)) - s.radius * s.radius;
+	poly.delta = poly.b*poly.b - 4 * poly.a * poly.c;
+	if (poly.delta < 0)
+		return (0);
+	*t = (-poly.b + sqrt(poly.delta)) / (2.0 * poly.a);
+	if (*t < 0)
+		return (0);
+	return (1);
+}
+
+int		has_inter_ss(t_scene *s, t_ray ray, double *min_t)
+{
+	double	t;
+	int		has_inter;
+	int		i;
+
+	*min_t = 1E99;
+	has_inter = 0;
+	i = 0;
+	while (i < s->s_n)
+	{
+		if (has_inter_s(s->s[i], ray, &t))
+		{
+			has_inter = 1;
+			if (t < *min_t)
+				*min_t = t;
+		}
+		i++;
+	}
+	return (has_inter);
+}
+
+int		color_format(t_vec3 albedo, double p_I)
+{
+	t_vec3	color;
+
+	color.x = albedo.x * fmin(255.0, fmax(0.0, p_I));
+	color.y = albedo.y * fmin(255.0, fmax(0.0, p_I));
+	color.z = albedo.z * fmin(255.0, fmax(0.0, p_I));
+	return (00 << 24 | (unsigned char)color.x << 16
+			| (unsigned char)color.y << 8 | (unsigned char)color.z);
+}
+
+int		get_color(t_scene scene, t_ray ray)
+{
+	t_vec3	N, P;
+	int		s_id;
+	double	t;
+	int		has_inter;
+	double	p_I;
+	
+	has_inter = inter_ss(scene.s, scene.s_n, ray, &P, &N, &s_id, &t);
+	if (has_inter)
+	{
+		t_ray	light_ray = (t_ray){vec_add(P, vec_prod(0.01, N)), vec_normalize(vec_sub(scene.light.position, P))};
+		double	lt;
+		double	has_inter_l = has_inter_ss(&scene, light_ray, &lt);
+		double	d_light2 = vec_norm2(vec_sub(scene.light.position, P));
+		if (has_inter_l && lt*lt < d_light2)
+			p_I = 0;
+		else
+			p_I = scene.light.intensity * fmax(0, vec_dot(vec_normalize(vec_sub(scene.light.position, P)), N)) / vec_norm2(vec_sub(scene.light.position, P));
+		return (color_format(scene.s[s_id].albedo, p_I));
+	}
+	return (0);
+}
 
 
 void	compute(t_data *data)
 {
-	t_sphere	s[6];
+	data->scene.s = calloc(7, sizeof(t_sphere));
+	if (!data->scene.s)
+		return ;
 
-	s[0].center = (t_vec3){0.0, 0.0, -55.0};
-	s[0].radius = 20.0;
-	s[0].albedo = (t_vec3){1.0, 0.0, 0.0};
+	data->scene.s_n = 7;
+	data->scene.s[0].center = (t_vec3){0.0, 0.0, -55.0};
+	data->scene.s[0].radius = 20.0;
+	data->scene.s[0].albedo = (t_vec3){1.0, 0.0, 0.0};
 
-	s[1].center = (t_vec3){0.0, -2000.0 - 20.0, 0.0};
-	s[1].radius = 2000.0;
-	s[1].albedo = (t_vec3){1.0, 1.0, 1.0};
+	data->scene.s[6].center = (t_vec3){10.0, 0.0, -75.0};
+	data->scene.s[6].radius = 20.0;
+	data->scene.s[6].albedo = (t_vec3){1.0, 1.0, 0.0};
 
-	s[2].center = (t_vec3){0.0, 2000.0 + 100.0, 0.0};
-	s[2].radius = 2000.0;
-	s[2].albedo = (t_vec3){1.0, 1.0, 1.0};
+	data->scene.s[1].center = (t_vec3){0.0, -2000.0 - 20.0, 0.0};
+	data->scene.s[1].radius = 2000.0;
+	data->scene.s[1].albedo = (t_vec3){1.0, 1.0, 1.0};
 
-	s[3].center = (t_vec3){-2000-50, 0.0, 0.0};
-	s[3].radius = 2000.0;
-	s[3].albedo = (t_vec3){0.0, 1.0, 0.0};
+	data->scene.s[2].center = (t_vec3){0.0, 2000.0 + 100.0, 0.0};
+	data->scene.s[2].radius = 2000.0;
+	data->scene.s[2].albedo = (t_vec3){1.0, 1.0, 1.0};
 
-	s[4].center = (t_vec3){2000+50, 0.0 , 0.0};
-	s[4].radius = 2000.0;
-	s[4].albedo = (t_vec3){0.0, 0.0, 1.0};
+	data->scene.s[3].center = (t_vec3){-2000-50, 0.0, 0.0};
+	data->scene.s[3].radius = 2000.0;
+	data->scene.s[3].albedo = (t_vec3){0.0, 1.0, 0.0};
 
-	s[5].center = (t_vec3){0.0, 0.0 , -2000-100};
-	s[5].radius = 2000.0;
-	s[5].albedo = (t_vec3){0.0, 1.0, 1.0};
+	data->scene.s[4].center = (t_vec3){2000+50, 0.0 , 0.0};
+	data->scene.s[4].radius = 2000.0;
+	data->scene.s[4].albedo = (t_vec3){0.0, 0.0, 1.0};
 
-	t_vec3	l_pos = (t_vec3){15.0, 70.0, 15};
-	double	l_I = 1000000;
+	data->scene.s[5].center = (t_vec3){0.0, 0.0 , -2000-100};
+	data->scene.s[5].radius = 2000.0;
+	data->scene.s[5].albedo = (t_vec3){0.0, 1.0, 1.0};
 
-	double	fov = 60.0 * M_PI / 180.0;
+	data->scene.light.position = (t_vec3){15.0, 70.0, -30};
+	data->scene.light.intensity = 1000000;
 
-	t_vec3	c_origin = (t_vec3){0.0, 0.0, 0.0};
-//	t_vec3	c_dir = (t_vec3){0.0, 0.0, -1.0};
+	data->scene.camera.fov = 60.0 * M_PI / 180.0;
+
+	data->scene.camera.origin = (t_vec3){0.0, 0.0, 0.0};
+	data->scene.camera.dir = (t_vec3){0.0, 0.0, -1.0};
 
 	for (int x = 0; x < 800; x++)
 	{
 		for (int y = 0; y < 800; y++)
 		{
 			t_ray	ray;
-			ray.dir = (t_vec3){x - 800 / 2.0, y - 800 / 2.0, -800 / (2 * tan(fov / 2.0))};
+			ray.dir = (t_vec3){x - 800 / 2.0, y - 800 / 2.0, -800 / (2 * tan(data->scene.camera.fov / 2.0))};
 			ray.dir = vec_normalize(ray.dir);
-			ray.origin = c_origin;
+			ray.origin = data->scene.camera.origin;
 
-			t_vec3	N, P;
-			double	p_I = 0;
+		/*	t_vec3	N, P;
 			int		s_id;
+			double	t;		// INUTILE
 
-			int		has_inter = inter_ss(s, 6, ray, &P, &N, &s_id);
+			int		has_inter = inter_ss(data->scene.s, 7, ray, &P, &N, &s_id, &t);
 			if (has_inter)
 			{
-				p_I = l_I * fmax(0, vec_dot(vec_normalize(vec_sub(l_pos, P)), N)) / vec_norm2(vec_sub(l_pos, P));		
+				double	p_I = 0;
+				double	min_t;
+				double	d_light2 = vec_norm2(vec_sub(data->scene.light.position, P));
 
-				t_vec3	color = (t_vec3){fmin(255, fmax(0, p_I)), fmin(255, fmax(0, p_I)), fmin(255, fmax(0, p_I))};
-				color = vec_prodv(color, s[s_id].albedo);
+				t_vec3 l_P, l_N;	// INUTILE
+				int	ss_id;			// INUTILE
+				
+				t_ray	shadow_ray;
+				shadow_ray.origin = vec_add(P, vec_prod(0.01, N)); //vec_prodv(vec_prod(0.01, P), N);
+				shadow_ray.dir = vec_normalize(vec_sub(data->scene.light.position, P));
+
+				d_light2 = vec_norm2(vec_sub(data->scene.light.position, P));
+				int	has_inter_shadow = inter_ss(data->scene.s, 7, shadow_ray, &l_P, &l_N, &ss_id, &min_t);
+				if (has_inter_shadow && min_t*min_t < d_light2)
+					p_I	= 0;
+				else
+					p_I = data->scene.light.intensity * fmax(0, vec_dot(vec_normalize(vec_sub(data->scene.light.position, P)), N)) / vec_norm2(vec_sub(data->scene.light.position, P));
+
+				t_vec3	color = (t_vec3){(fmin(255, fmax(0, p_I))), (fmin(255, fmax(0, p_I))), (fmin(255, fmax(0, p_I)))};
+				color = vec_prodv(color, data->scene.s[s_id].albedo);
 
 				int	c = 00 << 24 | (unsigned char)color.x << 16 | (unsigned char)color.y << 8 | (unsigned char)color.z;
-				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, 800 - y, c);
 			}
 			else
 				mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, 800 - y, 0x00000000);
+		*/
+			int	c = get_color(data->scene, ray);
+			mlx_pixel_put(data->mlx.mlx, data->mlx.win, x, 800 - y, c);
 		}
 	}
 
@@ -146,7 +243,7 @@ int	main(void)
 	set_hook(&data);
 
 	compute(&data);
-	printf("?\n");
+	printf("complete !\n");
 	mlx_loop(data.mlx.mlx);
 
 	destroy_mlx(&data);

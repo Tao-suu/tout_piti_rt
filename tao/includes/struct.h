@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:43:12 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/03 17:42:05 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/06 15:59:10 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,6 @@ typedef struct {
 	int		line_len;
 	char	*addr;
 }	t_mlx;
-
-typedef struct {
-	t_mlx	mlx;
-}	t_data;
 
 typedef struct {
 	float	x;
@@ -44,5 +40,37 @@ typedef struct {
 	t_vec3	origin;
 	t_vec3	dir;
 }	t_ray;
+
+typedef struct {
+	t_vec3	origin;
+	t_vec3	dir;
+	double	fov;
+}	t_camera;
+
+typedef struct {
+	t_vec3	position;
+	double	intensity;
+}	t_light;
+
+typedef struct {
+	t_sphere	*s;
+	int			s_n;
+	t_camera	camera;
+	t_light		light;
+}	t_scene;
+
+typedef struct {
+	t_mlx	mlx;
+	t_scene	scene;
+}	t_data;
+
+typedef struct {
+	double	a;
+	double	b;
+	double	c;
+	double	delta;
+	double	t1;
+	double	t2;
+}	t_poly;
 
 #endif
