@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:43:12 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/06 15:59:10 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/06 17:23:08 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ typedef struct {
 	t_vec3	center;
 	t_vec3	color;
 	t_vec3	albedo;
+	int		mirroir;
 }	t_sphere;
 
 typedef struct {

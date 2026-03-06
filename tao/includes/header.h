@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:40:30 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/03 17:39:37 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/06 17:22:49 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,5 +38,6 @@ t_vec3	vec_sub(t_vec3 a, t_vec3 b);
 t_vec3	vec_prod(double factor, t_vec3 a);
 t_vec3	vec_prodv(t_vec3 a, t_vec3 b);
 t_vec3	vec_normalize(t_vec3 a);
+t_vec3	vec_subd(t_vec3 a, double i);
 
 #endif
