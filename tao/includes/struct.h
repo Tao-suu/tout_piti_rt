@@ -6,12 +6,16 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:43:12 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/06 17:23:08 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/06 18:21:12 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef STRUCT_H
 # define STRUCT_H
+
+# define TRANSPARENT 2
+# define MIRROR 1
+# define DEFAULT 0;
 
 typedef struct {
 	void	*mlx;
@@ -34,7 +38,7 @@ typedef struct {
 	t_vec3	center;
 	t_vec3	color;
 	t_vec3	albedo;
-	int		mirroir;
+	int		state;
 }	t_sphere;
 
 typedef struct {

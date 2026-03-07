@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:49:58 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/06 17:22:25 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/07 14:00:25 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,4 +64,14 @@ t_vec3	vec_prodv(t_vec3 a, t_vec3 b)
 t_vec3	vec_subd(t_vec3 a, double i)
 {
 	return (t_vec3){a.x - i, a.y - i, a.z - i};
+}
+
+t_vec3 vec_cross(t_vec3 a, t_vec3 b)
+{
+	t_vec3	ret;
+
+	ret.x = a.y * b.z - a.z * b.y;
+	ret.y = a.z * b.x - a.x * b.z;
+	ret.z = a.x * b.y - a.y * b.x;
+	return (ret);
 }

@@ -6,13 +6,17 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:40:30 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/06 17:22:49 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/07 13:56:20 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HEADER_H
 # define HEADER_H
 
+# include <fcntl.h>
+# include <unistd.h>
+# include <stdint.h>
+# include <limits.h>
 # include <mlx.h>
 # include <math.h>
 # include <stdio.h>
@@ -39,5 +43,6 @@ t_vec3	vec_prod(double factor, t_vec3 a);
 t_vec3	vec_prodv(t_vec3 a, t_vec3 b);
 t_vec3	vec_normalize(t_vec3 a);
 t_vec3	vec_subd(t_vec3 a, double i);
+t_vec3	vec_cross(t_vec3 a, t_vec3 b);
 
 #endif
