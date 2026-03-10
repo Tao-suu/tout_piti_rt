@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:43:12 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/06 18:21:12 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/09 13:54:15 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 # define TRANSPARENT 2
 # define MIRROR 1
 # define DEFAULT 0;
+
+# include "define.h"
 
 typedef struct {
 	void	*mlx;
@@ -64,10 +66,18 @@ typedef struct {
 	t_light		light;
 }	t_scene;
 
+typedef struct s_data t_data;
 typedef struct {
-	t_mlx	mlx;
-	t_scene	scene;
-}	t_data;
+	int			y;
+	t_data 		*data;
+	pthread_t	thread;
+}	t_thread;
+
+struct s_data {
+	t_mlx		mlx;
+	t_scene		scene;
+	t_thread	thread[WIN_H];
+};
 
 typedef struct {
 	double	a;

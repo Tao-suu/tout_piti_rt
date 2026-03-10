@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:45:43 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/03 13:46:24 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/09 15:10:29 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ int	init_mlx(t_data *data)
 	data->mlx.mlx = mlx_init();
 	if (!data->mlx.mlx)
 		return (0);
-	data->mlx.win = mlx_new_window(data->mlx.mlx, 800, 800, "poc_tao");
+	data->mlx.win = mlx_new_window(data->mlx.mlx, WIN_W, WIN_H, "poc_tao");
 	if (!data->mlx.win)
 	{
 		mlx_destroy_display(data->mlx.mlx);
@@ -28,7 +28,7 @@ int	init_mlx(t_data *data)
 
 int	get_mlx_image(t_data *data)
 {
-	data->mlx.img = mlx_new_image(data->mlx.mlx, 800, 800);
+	data->mlx.img = mlx_new_image(data->mlx.mlx, WIN_W, WIN_H);
 	if (!data->mlx.img)
 		return (0);
 	data->mlx.addr = mlx_get_data_addr(data->mlx.img, &data->mlx.bpp,

@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/03 13:40:30 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/07 13:56:20 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/09 19:29:57 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,10 @@
 # include <math.h>
 # include <stdio.h>
 # include <stdlib.h>
+# include <pthread.h>
+# include "libft.h"
 # include "struct.h"
+# include "define.h"
 
 	//	MLX_BASE
 int		init_mlx(t_data *data);
@@ -44,5 +47,13 @@ t_vec3	vec_prodv(t_vec3 a, t_vec3 b);
 t_vec3	vec_normalize(t_vec3 a);
 t_vec3	vec_subd(t_vec3 a, double i);
 t_vec3	vec_cross(t_vec3 a, t_vec3 b);
+
+	//	THREAD
+void	join_thread(t_data *data);
+int		create_thread(t_data *data);
+void	*routine(void *arg);
+
+	// RANDOM
+double	random_double(void);
 
 #endif
