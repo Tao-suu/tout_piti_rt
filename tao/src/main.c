@@ -6,11 +6,14 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/27 17:18:19 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/10 14:45:27 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/10 17:04:52 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "header.h"
+
+int	total_pixel = 0;
+pthread_mutex_t	pixel_lock;
 
 int		create_scene(t_data *data)
 {
@@ -133,8 +136,8 @@ int	inter_ss(t_scene scene, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id, double *
 
 int	color_format(t_vec3 color)
 {
-//	color = (t_vec3){pow(color.x, 1/2.2), pow(color.y, 1/2.2), pow(color.z, 1/2.2)};
-//	color = (t_vec3){fmin(255, fmax(0, color.x)), fmin(255, fmax(0, color.y)), fmin(255, fmax(0, color.z))};
+//	color = (t_vec3){pow(color.x, 1.0/2.2), pow(color.y, 1.0/2.2), pow(color.z, 1.0/2.2)};
+	//color = (t_vec3){fmin(255, fmax(0, color.x)), fmin(255, fmax(0, color.y)), fmin(255, fmax(0, color.z))};
 	return ((unsigned char)color.x << 16 | (unsigned char)color.y << 8 | (unsigned char)color.z);
 }
 
@@ -155,7 +158,7 @@ int	light_inter(t_scene s, t_vec3 P, t_vec3 N)
 	return (0);
 }
 
-t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
+/*t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
 {
 	t_vec3	N, P;
 	int		s_id;
@@ -172,7 +175,7 @@ t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
 		t_ray m_ray;
 		m_ray.origin = vec_add(P, vec_prod(0.001, N));
 		m_ray.dir = vec_sub(ray.dir, vec_prod(2*vec_dot(N, ray.dir), N));
-		return (get_color(data, m_ray, --max_booing));
+		return (get_color(data, m_ray, max_booing - 1));
 	}
 	else if (data->scene.s[s_id].state == TRANSPARENT)
 	{
@@ -186,7 +189,7 @@ t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
 		if (radical > 0)
 		{
 			r_ray.dir = vec_sub(vec_prod(n1/n2, vec_sub(ray.dir, vec_prod(vec_dot(ray.dir, Nt), Nt))), vec_prod(sqrt(radical), Nt));
-			return (get_color(data, r_ray, --max_booing));
+			return (get_color(data, r_ray, max_booing - 1));
 		}
 	}
 
@@ -199,16 +202,89 @@ t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
 
 	// 		ECLAIRAGE INDIRECT
 	double r1 = random_double(), r2 = random_double();
-	t_ray rand_ray;
 	t_vec3 rand_dir = (t_vec3){cos(2 * M_PI * r1)*sqrt(1 - r2), sin(2 * M_PI * r1)*sqrt(1 - r2), sqrt(r2)};
 	t_vec3 rand = (t_vec3){random_double(), random_double(), random_double()};
 	t_vec3 t1 = vec_cross(N, rand); t1 = vec_normalize(t1);
 	t_vec3 t2 = vec_cross(t1, N);
 
+	t_ray rand_ray;
 	rand_ray.dir = vec_add(vec_add(vec_prod(rand_dir.z, N), vec_prod(rand_dir.x, t1)), vec_prod(rand_dir.y, t2));
 	rand_ray.origin = vec_add(P, vec_prod(0.001, N));
-	color = vec_add(color, vec_prodv(get_color(data, rand_ray, --max_booing), data->scene.s[s_id].albedo));
+	color = vec_add(color, vec_prodv(get_color(data, rand_ray, max_booing - 1), data->scene.s[s_id].albedo));
 	return (color);
+}*/
+
+t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
+{
+	if (max_booing == 0) return (t_vec3){0, 0, 0};
+
+	t_vec3	P, N;
+	int		s_id;
+	double	t;
+	int		has_inter = inter_ss(data->scene, ray, &P, &N, &s_id, &t);
+	t_vec3	color = (t_vec3){0, 0, 0};
+
+	if (has_inter)
+	{
+		if (data->scene.s[s_id].state == MIRROR)
+		{
+			t_ray	m_ray;
+			m_ray.dir = vec_sub(ray.dir, vec_prod(2*vec_dot(N, ray.dir), N));
+			m_ray.origin = vec_add(P, vec_prod(0.001, N));
+			color = get_color(data, m_ray, max_booing - 1);
+		}
+		else if (data->scene.s[s_id].state == TRANSPARENT)
+		{
+			double n1 = 1, n2 = 1.3;
+			t_vec3 Nt = N;
+			if (vec_dot(ray.dir, N) > 0)
+			{
+				n1 = 1.3; n2 = 1;
+				Nt = vec_prod(-1, N);
+			}
+
+			double radical = 1- pow(n1/n2, 2)*(1-pow(vec_dot(Nt, ray.dir), 2));
+			if (radical > 0)
+			{
+				t_ray r_ray;
+				r_ray.dir = vec_sub(vec_prod(n1/n2, vec_sub(ray.dir, vec_prod(vec_dot(ray.dir, Nt), Nt))), vec_prod(sqrt(radical), Nt));
+				r_ray.origin = vec_sub(P, vec_prod(0.001, Nt));
+				color = get_color(data, r_ray, max_booing - 1);
+			}
+		}
+		else
+		{
+			t_ray l_ray;
+			l_ray.dir = vec_normalize(vec_sub(data->scene.light.position, P));
+			l_ray.origin = vec_add(P, vec_prod(0.001, N));
+			t_vec3	Pl, Nl;
+			int		sl_id;
+			double	tl;
+			int		has_inter_light = inter_ss(data->scene, l_ray, &Pl, &Nl, &sl_id, &tl);
+			double	d_light2 = vec_norm2(vec_sub(data->scene.light.position, P));
+			if (has_inter_light && tl*tl < d_light2)
+				color = (t_vec3){0, 0, 0};
+			else
+			{
+				double	prod = data->scene.light.intensity * fmax(0.0, vec_dot(vec_normalize(vec_sub(data->scene.light.position, P)), N)) / d_light2;
+				prod = fmin(255, fmax(0, pow(prod, 1.0/2.2)));
+				color = vec_prod(prod, data->scene.s[s_id].albedo);
+			}
+			
+			double r1 = random_double(), r2 = random_double();
+			t_vec3 rand_dir = (t_vec3){cos(2 * M_PI * r1)*sqrt(1 - r2), sin(2 * M_PI * r1)*sqrt(1 - r2), sqrt(r2)};
+			t_vec3 rand = (t_vec3){random_double() - 0.5, random_double() - 0.5, random_double() - 0.5};
+			t_vec3 t1 = vec_cross(N, rand); t1 = vec_normalize(t1);
+			t_vec3 t2 = vec_cross(t1, N);
+			
+			t_ray	rand_ray;
+			rand_ray.dir = vec_add(vec_add(vec_prod(rand_dir.z, N), vec_prod(rand_dir.x, t1)), vec_prod(rand_dir.y, t2));
+			rand_ray.origin = vec_add(P, vec_prod(0.001, N));
+			t_vec3	tmp = vec_prodv(get_color(data, rand_ray, max_booing - 1), data->scene.s[s_id].albedo);
+			color = vec_add(color, vec_prod(0.5, tmp));
+		}
+	}
+	return color;
 }
 
 void	*routine(void *arg)
@@ -223,8 +299,14 @@ void	*routine(void *arg)
 		t_ray	ray;
 		ray.origin = data->scene.camera.origin;
 		ray.dir	= vec_normalize((t_vec3){x - WIN_W / 2, thread->y - WIN_H / 2, -WIN_W / (2 * tan(data->scene.camera.fov / 2))});
-		int	color = color_format(get_color(data, ray, MAX_REBOND));
+		t_vec3	res = (t_vec3){0, 0, 0};
+		for (int z = 0; z < MAX_RAYS; z++)
+			res = vec_prod(1.0/(double)MAX_RAYS, vec_add(res, get_color(data, ray, MAX_REBOND)));
+		int	color = color_format(res);
 		put_pixel(data, x, WIN_H - thread->y, color);
+		pthread_mutex_lock(&pixel_lock);
+		total_pixel++;
+		pthread_mutex_unlock(&pixel_lock);
 	}
 	return (NULL);
 }
@@ -236,6 +318,20 @@ void	compute(t_data *data)
 		perror("rt");
 		return ;
 	}
+	int	last_pixel = 0;
+	while (1)
+	{
+		pthread_mutex_lock(&pixel_lock);
+		if (total_pixel != last_pixel)
+		{
+			printf("%d / %d\n", total_pixel, WIN_H * WIN_W);
+			last_pixel = total_pixel;
+		}
+		pthread_mutex_unlock(&pixel_lock);
+		if (total_pixel <= last_pixel)
+			break ;
+	}
+	
 	/*
 	for (int y = 0; y < WIN_H; y++)
 	{
@@ -261,6 +357,7 @@ int	main(void)
 		destroy_mlx(&data);
 		return (0);
 	}
+	pthread_mutex_init(&pixel_lock, NULL);
 	set_hook(&data);
 	compute(&data);
 	//printf("%f\n", random_double());

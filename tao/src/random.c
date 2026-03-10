@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/09 19:18:55 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/09 19:33:52 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/10 16:37:29 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,11 @@
 
 double	random_double(void)
 {
-	int			fd;
+	static int	fd = -1;
 	uint64_t	buff;
 
-	fd = open("/dev/urandom", O_RDONLY);
+	if (fd < 0)
+		fd = open("/dev/urandom", O_RDONLY);
 	read(fd, &buff, sizeof(buff));
 	return ((double)buff / (double)UINT64_MAX);
 }
