@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/27 17:18:19 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/10 17:04:52 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/10 17:23:43 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ int		create_scene(t_data *data)
 	data->scene.s[5].state = 0;
 
 	data->scene.light.position = (t_vec3){15.0, 60.0, -40};
-	data->scene.light.intensity = 100000000;
+	data->scene.light.intensity = 1000000000;
 
 	data->scene.camera.fov = 90.0 * M_PI / 180.0;
 
@@ -304,10 +304,11 @@ void	*routine(void *arg)
 			res = vec_prod(1.0/(double)MAX_RAYS, vec_add(res, get_color(data, ray, MAX_REBOND)));
 		int	color = color_format(res);
 		put_pixel(data, x, WIN_H - thread->y, color);
-		pthread_mutex_lock(&pixel_lock);
-		total_pixel++;
-		pthread_mutex_unlock(&pixel_lock);
 	}
+	pthread_mutex_lock(&pixel_lock);
+	total_pixel+=WIN_W;
+	pthread_mutex_unlock(&pixel_lock);
+	
 	return (NULL);
 }
 
@@ -318,33 +319,20 @@ void	compute(t_data *data)
 		perror("rt");
 		return ;
 	}
-	int	last_pixel = 0;
-	while (1)
-	{
+	int last_pxl = 0;
+	while (1) {	
 		pthread_mutex_lock(&pixel_lock);
-		if (total_pixel != last_pixel)
-		{
-			printf("%d / %d\n", total_pixel, WIN_H * WIN_W);
-			last_pixel = total_pixel;
-		}
+		int	pxl = total_pixel;
 		pthread_mutex_unlock(&pixel_lock);
-		if (total_pixel <= last_pixel)
+		if (last_pxl != pxl)
+		{
+			printf("\r%3.0f %%", ((double)pxl * 100.0) / (double)(WIN_H * WIN_W));
+			last_pxl = pxl;
+		}
+		if (last_pxl >= WIN_H * WIN_W - 1)
 			break ;
 	}
-	
-	/*
-	for (int y = 0; y < WIN_H; y++)
-	{
-		for (int x = 0; x < WIN_W; x++)
-		{
-			t_ray	ray;
-			ray.origin = data->scene.camera.origin;
-			ray.dir	= vec_normalize((t_vec3){x - WIN_W / 2, y - WIN_H / 2, -WIN_W / (2 * tan(data->scene.camera.fov / 2))});
-			int	color = color_format(get_color(data, ray));
-			put_pixel(data, x, WIN_H - y, color);
-		}
-	}
-	*/
+
 	join_thread(data);
 }
 
@@ -360,7 +348,6 @@ int	main(void)
 	pthread_mutex_init(&pixel_lock, NULL);
 	set_hook(&data);
 	compute(&data);
-	//printf("%f\n", random_double());
 	printf("complete\n");
 	mlx_put_image_to_window(data.mlx.mlx, data.mlx.win, data.mlx.img, 0, 0);
 	mlx_loop(data.mlx.mlx);
