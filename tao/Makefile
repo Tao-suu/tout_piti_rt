@@ -6,7 +6,7 @@
 #    By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/02/27 17:19:19 by tbez--du          #+#    #+#              #
-#    Updated: 2026/03/09 19:25:31 by tbez--du         ###   ########.fr        #
+#    Updated: 2026/03/10 17:48:04 by tbez--du         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -42,18 +42,17 @@ libft/libft.a:
 	$(MAKE) -C libft
 
 $(OBJ_DIR)%.o:	$(SRC_DIR)%.c
-	mkdir -p $(DEP_DIR)
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(DEP_DIR)
+	@mkdir -p $(OBJ_DIR)
 	$(CF) -c $< -o $@ -MMD -MP -MF $(DEP_DIR)$*.d
 
 clean:
 	rm -rf $(OBJ_DIR)
-	$(MAKE) -C libft clean
+	@$(MAKE) -C libft clean -s
 	rm -rf $(DEP_DIR)
 
 fclean:	clean
 	rm -f $(NAME)
-	rm -f libft/libft.a
 
 re:	fclean all
 

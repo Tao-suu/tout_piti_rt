@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/27 17:18:19 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/10 17:23:43 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/10 19:02:37 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,16 +21,16 @@ int		create_scene(t_data *data)
 	if (!data->scene.s)
 		return (0);
 
-	data->scene.s_n = 6;
-	data->scene.s[0].center = (t_vec3){0.0, 0.0, -55.0};
-	data->scene.s[0].radius = 20.0;
+	data->scene.s_n = 7;
+	data->scene.s[0].center = (t_vec3){20.0, 0.0, -55.0};
+	data->scene.s[0].radius = 10.0;
 	data->scene.s[0].albedo = (t_vec3){1.0, 1.0, 1.0};
 	data->scene.s[0].state = 0;
 	
-	data->scene.s[6].center = (t_vec3){0.0, 0.0, -55.0};
-	data->scene.s[6].radius = 20.0;
-	data->scene.s[6].albedo = (t_vec3){1.0, 1.0, 1.0};
-	data->scene.s[6].state = 0;
+	data->scene.s[6].center = (t_vec3){-20.0, 0.0, -55.0};
+	data->scene.s[6].radius = 10.0;
+	data->scene.s[6].albedo = (t_vec3){1.0, 0.0, 1.0};
+	data->scene.s[6].state = 1;
 
 	// 			FRONT
 	data->scene.s[1].center = (t_vec3){0.0, 0.0, -2000.0 - 100};
@@ -63,7 +63,7 @@ int		create_scene(t_data *data)
 	data->scene.s[5].state = 0;
 
 	data->scene.light.position = (t_vec3){15.0, 60.0, -40};
-	data->scene.light.intensity = 1000000000;
+	data->scene.light.intensity = 100000000;
 
 	data->scene.camera.fov = 90.0 * M_PI / 180.0;
 
@@ -136,8 +136,8 @@ int	inter_ss(t_scene scene, t_ray ray, t_vec3 *P, t_vec3 *N, int *s_id, double *
 
 int	color_format(t_vec3 color)
 {
-//	color = (t_vec3){pow(color.x, 1.0/2.2), pow(color.y, 1.0/2.2), pow(color.z, 1.0/2.2)};
-	//color = (t_vec3){fmin(255, fmax(0, color.x)), fmin(255, fmax(0, color.y)), fmin(255, fmax(0, color.z))};
+	color = (t_vec3){pow(color.x, 1.0/2.2), pow(color.y, 1.0/2.2), pow(color.z, 1.0/2.2)};
+	color = (t_vec3){fmin(255., fmax(0., color.x)), fmin(255., fmax(0., color.y)), fmin(255., fmax(0., color.z))};
 	return ((unsigned char)color.x << 16 | (unsigned char)color.y << 8 | (unsigned char)color.z);
 }
 
@@ -266,9 +266,10 @@ t_vec3	get_color(t_data *data, t_ray ray, int max_booing)
 				color = (t_vec3){0, 0, 0};
 			else
 			{
-				double	prod = data->scene.light.intensity * fmax(0.0, vec_dot(vec_normalize(vec_sub(data->scene.light.position, P)), N)) / d_light2;
-				prod = fmin(255, fmax(0, pow(prod, 1.0/2.2)));
+				double	prod = data->scene.light.intensity * fmax(0.0, vec_dot(vec_normalize(vec_sub(data->scene.light.position, P)), N));
+				//prod = fmin(255, fmax(0, prod));
 				color = vec_prod(prod, data->scene.s[s_id].albedo);
+				color = vec_prod(1.0/d_light2, color);
 			}
 			
 			double r1 = random_double(), r2 = random_double();
@@ -296,19 +297,30 @@ void	*routine(void *arg)
 	data = thread->data;
 	for (int x = 0; x < WIN_W; x++)
 	{
-		t_ray	ray;
-		ray.origin = data->scene.camera.origin;
-		ray.dir	= vec_normalize((t_vec3){x - WIN_W / 2, thread->y - WIN_H / 2, -WIN_W / (2 * tan(data->scene.camera.fov / 2))});
 		t_vec3	res = (t_vec3){0, 0, 0};
 		for (int z = 0; z < MAX_RAYS; z++)
-			res = vec_prod(1.0/(double)MAX_RAYS, vec_add(res, get_color(data, ray, MAX_REBOND)));
+		{
+			double r1 = random_double(), r2 = random_double();
+			double R = sqrt(-2 * log(r1));
+			double dx = R*cos(2 * M_PI * r2);
+			double dy = R*sin(2 * M_PI * r2);
+
+			t_ray ray;
+			ray.origin = data->scene.camera.origin;
+			ray.dir.x = x - WIN_W / 2.0 + 0.5 + dx;
+			ray.dir.y = thread->y - WIN_H / 2.0 + 0.5 + dy;
+			ray.dir.z = -WIN_W / (2 * tan(data->scene.camera.fov / 2));
+			ray.dir = vec_normalize(ray.dir);
+
+			res = vec_add(res, vec_prod(1.0/MAX_RAYS, get_color(data, ray, MAX_REBOND)));
+		}
 		int	color = color_format(res);
 		put_pixel(data, x, WIN_H - thread->y, color);
+
+		pthread_mutex_lock(&pixel_lock);
+		total_pixel++;
+		pthread_mutex_unlock(&pixel_lock);
 	}
-	pthread_mutex_lock(&pixel_lock);
-	total_pixel+=WIN_W;
-	pthread_mutex_unlock(&pixel_lock);
-	
 	return (NULL);
 }
 
@@ -319,6 +331,24 @@ void	compute(t_data *data)
 		perror("rt");
 		return ;
 	}
+/*
+#pragma omp parallel for
+	for (int y = 0; y < WIN_H; y++) {
+		for (int x = 0; x < WIN_W; x++)
+		{
+			t_ray	ray;
+			ray.origin = data->scene.camera.origin;
+			ray.dir	= vec_normalize((t_vec3){x - WIN_W / 2, y - WIN_H / 2, -WIN_W / (2 * tan(data->scene.camera.fov / 2))});
+			t_vec3	res = (t_vec3){0, 0, 0};
+			for (int z = 0; z < MAX_RAYS; z++)
+				res = vec_prod(1.0/(double)MAX_RAYS, vec_add(res, get_color(data, ray, MAX_REBOND)));
+			int	color = color_format(res);
+			put_pixel(data, x, WIN_H - y, color);
+		}
+		printf("\r%3.0f %%", ((double)y * 100.0)/ (double)WIN_H);
+		fflush(stdout);
+	}*/
+
 	int last_pxl = 0;
 	while (1) {	
 		pthread_mutex_lock(&pixel_lock);
@@ -327,6 +357,7 @@ void	compute(t_data *data)
 		if (last_pxl != pxl)
 		{
 			printf("\r%3.0f %%", ((double)pxl * 100.0) / (double)(WIN_H * WIN_W));
+			fflush(stdout);
 			last_pxl = pxl;
 		}
 		if (last_pxl >= WIN_H * WIN_W - 1)
@@ -348,7 +379,6 @@ int	main(void)
 	pthread_mutex_init(&pixel_lock, NULL);
 	set_hook(&data);
 	compute(&data);
-	printf("complete\n");
 	mlx_put_image_to_window(data.mlx.mlx, data.mlx.win, data.mlx.img, 0, 0);
 	mlx_loop(data.mlx.mlx);
 	destroy_mlx(&data);

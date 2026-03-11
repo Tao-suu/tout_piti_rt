@@ -6,7 +6,7 @@
 /*   By: tbez--du <tbez--du@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/09 13:42:32 by tbez--du          #+#    #+#             */
-/*   Updated: 2026/03/10 17:02:18 by tbez--du         ###   ########.fr       */
+/*   Updated: 2026/03/10 18:53:12 by tbez--du         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,11 @@
 # endif
 
 # ifndef MAX_REBOND
-#  define MAX_REBOND 5
+#  define MAX_REBOND 2
 # endif
 
 # ifndef MAX_RAYS
-#  define MAX_RAYS 5
+#  define MAX_RAYS 32
 # endif
 
 #endif
